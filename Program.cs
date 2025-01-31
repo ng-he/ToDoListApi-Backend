@@ -1,0 +1,49 @@
+using Microsoft.EntityFrameworkCore;
+using ToDoListApi.Data;
+using ToDoListApi.Middlewares;
+using ToDoListApi.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddScoped<TaskManipulationService>();
+builder.Services.AddScoped<TaskListManipulationService>();
+
+builder.Services.AddControllers().AddJsonOptions(options =>
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddDbContext<ToDoListDbContext>(options =>
+{
+    string connectionString = builder.Configuration.GetConnectionString("ToDoListDatabase") ?? "";
+    options.UseSqlServer(connectionString);
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseCors("AllowSpecificOrigin");
+app.UseAuthorization();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.MapControllers();
+
+app.Run();

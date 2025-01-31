@@ -1,0 +1,36 @@
+﻿networks:
+  app_network:
+    driver: bridge
+
+services:
+  db-mssql:
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    container_name: mssql-server
+    restart: always
+    hostname: mssql
+    environment: 
+      SA_PASSWORD: "Password123!"  # Ensure a strong password
+      ACCEPT_EULA: 'Y'
+    volumes:
+      - ./mssqlvolume:/var/opt/mssql/data # Named volume for database storage
+    ports:
+      - "1434:1433"  # Map host port 1434 to container port 1433
+    networks:
+      - app_network
+
+  app:
+    networks:
+      - app_network
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    environment:
+      - NODE_ENV=development
+
+volumes:                                
+  mssqlvolume:        
+    name: mssql-server-vl
